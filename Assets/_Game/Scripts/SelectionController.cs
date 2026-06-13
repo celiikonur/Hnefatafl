@@ -6,6 +6,7 @@ public class SelectionController : MonoBehaviour
     public Material highlightMaterial;
     public PieceSpawner spawner;
     public BoardHighlighter highlighter;
+    public PieceAnimator animator;
 
     Transform selectedPiece;
     Material originalMaterial;
@@ -15,6 +16,9 @@ public class SelectionController : MonoBehaviour
     {
         if (Mouse.current == null) return;
         if (!Mouse.current.leftButton.wasPressedThisFrame) return;
+
+        // Animasyon oynarken girdi alma (kaos olmasin)
+        if (animator != null && animator.IsAnimating) return;
 
         Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
 
@@ -85,7 +89,6 @@ public class SelectionController : MonoBehaviour
         originalMaterial = rend.material;
         rend.material = highlightMaterial;
 
-        // Gecerli hamleleri goster
         if (highlighter != null)
         {
             var targets = spawner.State.GetLegalMovesFrom(row, col);
@@ -104,24 +107,52 @@ public class SelectionController : MonoBehaviour
 
         var captured = spawner.State.ApplyMove(selectedRow, selectedCol, toRow, toCol);
 
+        // Seçili tasi sakla (Deselect referansi sifirlamadan once)
+        Transform movingPiece = selectedPiece;
+
+        // Once secimi gorsel olarak birak (materyali eski haline dondur)
+        movingPiece.GetComponent<Renderer>().material = originalMaterial;
+
+        // Hedef dunya pozisyonu (taso yuksekligini koru)
         Vector3 target = tile.position;
-        target.y = selectedPiece.position.y;
-        selectedPiece.position = target;
+        target.y = movingPiece.position.y;
 
-        foreach (var (r, c) in captured)
-            RemovePieceAt(r, c);
-
-        // Hamle gostergelerini temizle, son hamleyi vurgula
+        // Gostergeleri temizle, son hamleyi vurgula
         if (highlighter != null)
         {
             highlighter.ClearMoveOptions();
             highlighter.HighlightMove(fromRow, fromCol, toRow, toCol);
         }
 
+        // Animasyonlu kaydir; bitince yenen taslari kaldir ve sonu kontrol et
+        if (animator != null)
+        {
+            animator.MovePiece(movingPiece, target, () =>
+            {
+                FinishMove(captured);
+            });
+        }
+        else
+        {
+            movingPiece.position = target;
+            FinishMove(captured);
+        }
+
+        // Secim degiskenlerini sifirla (materyal zaten geri yuklendi)
+        selectedPiece = null;
+        originalMaterial = null;
+        selectedRow = -1;
+        selectedCol = -1;
+    }
+
+    // Animasyon bitince calisir
+    void FinishMove(System.Collections.Generic.List<(int row, int col)> captured)
+    {
+        foreach (var (r, c) in captured)
+            RemovePieceAt(r, c);
+
         if (spawner.State.GameOver)
             Debug.Log(spawner.State.AttackerWon ? "SALDIRGANLAR KAZANDI!" : "SAVUNMACILAR KAZANDI!");
-
-        Deselect();
     }
 
     void RemovePieceAt(int row, int col)
@@ -147,7 +178,6 @@ public class SelectionController : MonoBehaviour
         selectedRow = -1;
         selectedCol = -1;
 
-        // Secim kalkinca hamle gostergelerini de temizle
         if (highlighter != null)
             highlighter.ClearMoveOptions();
     }

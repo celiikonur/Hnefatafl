@@ -921,6 +921,7 @@ GameObject:
   - component: {fileID: 1942108594}
   - component: {fileID: 1942108597}
   - component: {fileID: 1942108598}
+  - component: {fileID: 1942108599}
   m_Layer: 0
   m_Name: GameController
   m_TagString: Untagged
@@ -942,6 +943,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AIController
   spawner: {fileID: 1819217831}
   highlighter: {fileID: 1942108597}
+  animator: {fileID: 1942108599}
   aiPlaysAttackers: 0
   thinkDelay: 0.6
   searchDepth: 3
@@ -960,6 +962,7 @@ MonoBehaviour:
   highlightMaterial: {fileID: 2100000, guid: 25058825d3e51437b8b1e95641f31c45, type: 2}
   spawner: {fileID: 1819217831}
   highlighter: {fileID: 1942108597}
+  animator: {fileID: 1942108599}
 --- !u!4 &1942108596
 Transform:
   m_ObjectHideFlags: 0
@@ -988,8 +991,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardHighlighter
   board: {fileID: 84762996}
-  lastMovePrefab: {fileID: 5851980534790246334, guid: 5c66d6141a733465eac626b1aa3c02b7, type: 3}
-  moveOptionPrefab: {fileID: 5851980534790246334, guid: 1b908573e4199460382dcd10083abfc0, type: 3}
+  lastMovePrefab: {fileID: 5851980534790246334, guid: 1b908573e4199460382dcd10083abfc0, type: 3}
+  moveOptionPrefab: {fileID: 5851980534790246334, guid: 5c66d6141a733465eac626b1aa3c02b7, type: 3}
   heightOffset: 0.08
 --- !u!114 &1942108598
 MonoBehaviour:
@@ -1006,6 +1009,19 @@ MonoBehaviour:
   spawner: {fileID: 1819217831}
   gameOverPanel: {fileID: 271153281}
   resultText: {fileID: 1066374572}
+--- !u!114 &1942108599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1942108593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a14e852f227f541a7992cc98fe9cdd9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PieceAnimator
+  moveDuration: 0.2
 --- !u!1 &2132545667
 GameObject:
   m_ObjectHideFlags: 0

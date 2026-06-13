@@ -4,10 +4,11 @@ using UnityEngine;
 public class AIController : MonoBehaviour
 {
     public PieceSpawner spawner;
-    public BoardHighlighter highlighter; // son hamle vurgusu
+    public BoardHighlighter highlighter;
+    public PieceAnimator animator;
 
     [Header("AI Settings")]
-    public bool aiPlaysAttackers = false; // false = AI savunmaci, sen saldirgansin
+    public bool aiPlaysAttackers = false;
     public float thinkDelay = 0.6f;
 
     [Header("Zorluk")]
@@ -15,11 +16,13 @@ public class AIController : MonoBehaviour
     public int searchDepth = 3;
 
     float timer;
+    bool moveInProgress; // animasyon dahil hamle suruyor mu
 
     void Update()
     {
         if (spawner == null || spawner.State == null) return;
         if (spawner.State.GameOver) return;
+        if (moveInProgress) return;
 
         if (spawner.State.AttackerTurn != aiPlaysAttackers)
         {
@@ -50,22 +53,43 @@ public class AIController : MonoBehaviour
             bestMove.FromRow, bestMove.FromCol, bestMove.ToRow, bestMove.ToCol);
 
         Transform piece = FindPieceAt(bestMove.FromRow, bestMove.FromCol);
-        if (piece != null)
-        {
-            float offset = (spawner.boardSize - 1) / 2f;
-            Vector3 target = new Vector3(bestMove.ToCol - offset, piece.position.y, bestMove.ToRow - offset);
-            piece.position = target;
-        }
 
+        // Son hamleyi vurgula
+        if (highlighter != null)
+            highlighter.HighlightMove(bestMove.FromRow, bestMove.FromCol, bestMove.ToRow, bestMove.ToCol);
+
+        // Hedef pozisyon
+        float offset = (spawner.boardSize - 1) / 2f;
+        Vector3 target = new Vector3(
+            bestMove.ToCol - offset,
+            piece != null ? piece.position.y : 0.2f,
+            bestMove.ToRow - offset);
+
+        moveInProgress = true;
+
+        if (animator != null && piece != null)
+        {
+            animator.MovePiece(piece, target, () =>
+            {
+                FinishMove(captured);
+                moveInProgress = false;
+            });
+        }
+        else
+        {
+            if (piece != null) piece.position = target;
+            FinishMove(captured);
+            moveInProgress = false;
+        }
+    }
+
+    void FinishMove(List<(int row, int col)> captured)
+    {
         foreach (var (r, c) in captured)
         {
             Transform victim = FindPieceAt(r, c);
             if (victim != null) Destroy(victim.gameObject);
         }
-
-        // Son hamleyi vurgula (oyuncu AI'in ne oynadigini gorsun)
-        if (highlighter != null)
-            highlighter.HighlightMove(bestMove.FromRow, bestMove.FromCol, bestMove.ToRow, bestMove.ToCol);
 
         if (spawner.State.GameOver)
             Debug.Log(spawner.State.AttackerWon ? "SALDIRGANLAR KAZANDI!" : "SAVUNMACILAR KAZANDI!");
