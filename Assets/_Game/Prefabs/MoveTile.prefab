@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5115997604582054505}
   - component: {fileID: 6751055197433277757}
   m_Layer: 0
-  m_Name: HighlightTile
+  m_Name: MoveTile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: aa00c8110605d4135ab15e58ce5f042a, type: 2}
+  - {fileID: 2100000, guid: 4509d9809002d4ad0a6586a53601dab3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
