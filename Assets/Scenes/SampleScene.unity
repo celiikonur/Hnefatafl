@@ -988,7 +988,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoardHighlighter
   board: {fileID: 84762996}
-  highlightPrefab: {fileID: 5851980534790246334, guid: 1b908573e4199460382dcd10083abfc0, type: 3}
+  lastMovePrefab: {fileID: 5851980534790246334, guid: 5c66d6141a733465eac626b1aa3c02b7, type: 3}
+  moveOptionPrefab: {fileID: 5851980534790246334, guid: 1b908573e4199460382dcd10083abfc0, type: 3}
   heightOffset: 0.08
 --- !u!114 &1942108598
 MonoBehaviour:

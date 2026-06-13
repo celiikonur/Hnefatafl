@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Iki tur vurgu yonetir:
-// 1) Son yapilan hamlenin kalkis/varis kareleri (fromGlow, toGlow)
-// 2) Secili tasin gidebilecegi kareler (moveGlows havuzu)
-// Hepsi ayni seffaf glow levhasini (HighlightTile) kullanir.
+// Iki tur vurgu yonetir, her biri AYRI prefab/renk kullanir:
+// 1) Son yapilan hamlenin kalkis/varis kareleri  -> lastMovePrefab (mavi)
+// 2) Secili tasin gidebilecegi kareler            -> moveOptionPrefab (yeni renk)
 public class BoardHighlighter : MonoBehaviour
 {
-    public Transform board;            // Tile'larin parent'i (Board objesi)
-    public GameObject highlightPrefab; // HighlightTile prefab'i
+    public Transform board;              // Tile'larin parent'i (Board objesi)
+    public GameObject lastMovePrefab;    // HighlightTile  (son hamle, mavi)
+    public GameObject moveOptionPrefab;  // MoveTile       (gecerli hamleler, yeni renk)
     public float heightOffset = 0.08f;
 
     // --- Son hamle vurgusu ---
@@ -19,8 +19,8 @@ public class BoardHighlighter : MonoBehaviour
 
     void Awake()
     {
-        fromGlow = Instantiate(highlightPrefab, transform);
-        toGlow = Instantiate(highlightPrefab, transform);
+        fromGlow = Instantiate(lastMovePrefab, transform);
+        toGlow = Instantiate(lastMovePrefab, transform);
         fromGlow.SetActive(false);
         toGlow.SetActive(false);
     }
@@ -39,7 +39,6 @@ public class BoardHighlighter : MonoBehaviour
     }
 
     // === GECERLI HAMLELER ===
-    // Verilen koordinat listesindeki her kareye bir glow koyar.
     public void ShowMoveOptions(List<(int row, int col)> targets)
     {
         ClearMoveOptions();
@@ -57,14 +56,13 @@ public class BoardHighlighter : MonoBehaviour
             glow.SetActive(false);
     }
 
-    // Havuzdan bos bir glow al; yoksa yeni uret (tekrar tekrar kullanilir)
     GameObject GetPooledGlow()
     {
         foreach (var glow in moveGlows)
         {
             if (!glow.activeSelf) return glow;
         }
-        GameObject created = Instantiate(highlightPrefab, transform);
+        GameObject created = Instantiate(moveOptionPrefab, transform);
         created.SetActive(false);
         moveGlows.Add(created);
         return created;
