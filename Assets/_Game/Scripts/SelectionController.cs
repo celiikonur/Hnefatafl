@@ -5,7 +5,7 @@ public class SelectionController : MonoBehaviour
 {
     public Material highlightMaterial;
     public PieceSpawner spawner;
-    public BoardHighlighter highlighter; // son hamle vurgusu
+    public BoardHighlighter highlighter;
 
     Transform selectedPiece;
     Material originalMaterial;
@@ -84,6 +84,13 @@ public class SelectionController : MonoBehaviour
         Renderer rend = piece.GetComponent<Renderer>();
         originalMaterial = rend.material;
         rend.material = highlightMaterial;
+
+        // Gecerli hamleleri goster
+        if (highlighter != null)
+        {
+            var targets = spawner.State.GetLegalMovesFrom(row, col);
+            highlighter.ShowMoveOptions(targets);
+        }
     }
 
     void TryMoveTo(Transform tile)
@@ -93,7 +100,6 @@ public class SelectionController : MonoBehaviour
         if (!spawner.State.IsLegalMove(selectedRow, selectedCol, toRow, toCol))
             return;
 
-        // Hamle oncesi kalkis koordinatini sakla (Deselect oncesi)
         int fromRow = selectedRow, fromCol = selectedCol;
 
         var captured = spawner.State.ApplyMove(selectedRow, selectedCol, toRow, toCol);
@@ -105,9 +111,12 @@ public class SelectionController : MonoBehaviour
         foreach (var (r, c) in captured)
             RemovePieceAt(r, c);
 
-        // Son hamleyi vurgula
+        // Hamle gostergelerini temizle, son hamleyi vurgula
         if (highlighter != null)
+        {
+            highlighter.ClearMoveOptions();
             highlighter.HighlightMove(fromRow, fromCol, toRow, toCol);
+        }
 
         if (spawner.State.GameOver)
             Debug.Log(spawner.State.AttackerWon ? "SALDIRGANLAR KAZANDI!" : "SAVUNMACILAR KAZANDI!");
@@ -137,5 +146,9 @@ public class SelectionController : MonoBehaviour
         originalMaterial = null;
         selectedRow = -1;
         selectedCol = -1;
+
+        // Secim kalkinca hamle gostergelerini de temizle
+        if (highlighter != null)
+            highlighter.ClearMoveOptions();
     }
 }

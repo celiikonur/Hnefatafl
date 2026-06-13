@@ -19,7 +19,7 @@ public class GameState
     public int Size { get; private set; }
     PieceType[,] board;
 
-    public bool AttackerTurn { get; private set; } = true; // Hnefatafl'da ilk hamle saldirganin
+    public bool AttackerTurn { get; private set; } = true;
     public bool GameOver { get; private set; }
     public bool AttackerWon { get; private set; }
 
@@ -45,16 +45,12 @@ public class GameState
         }
     }
 
-    // Bos constructor (Clone icin)
     GameState(int size)
     {
         Size = size;
         board = new PieceType[size, size];
     }
 
-    // === KOPYALAMA (AI bunu kullanir) ===
-    // Pozisyonun bagimsiz bir kopyasini olusturur. AI sanal hamleleri
-    // kopya uzerinde dener, gercek oyun state'i hic bozulmaz.
     public GameState Clone()
     {
         var copy = new GameState(Size);
@@ -82,7 +78,6 @@ public class GameState
         return row == c && col == c;
     }
 
-    // === HAMLE GECERLILIGI ===
     public bool IsLegalMove(int fromRow, int fromCol, int toRow, int toCol)
     {
         if (!IsInside(fromRow, fromCol) || !IsInside(toRow, toCol)) return false;
@@ -115,7 +110,6 @@ public class GameState
         return true;
     }
 
-    // === TUM YASAL HAMLELER ===
     public List<Move> GetAllLegalMoves()
     {
         var moves = new List<Move>();
@@ -150,7 +144,38 @@ public class GameState
         return moves;
     }
 
-    // === HAMLE UYGULAMA ===
+    // === TEK TASIN HEDEFLERI (gecerli hamle gostergeleri icin) ===
+    // Verilen karedeki tasin gidebilecegi tum kareleri dondurur.
+    public List<(int row, int col)> GetLegalMovesFrom(int row, int col)
+    {
+        var targets = new List<(int, int)>();
+        if (GameOver) return targets;
+        if (!IsInside(row, col)) return targets;
+
+        PieceType piece = board[row, col];
+        if (piece == PieceType.None) return targets;
+
+        // Sirasi degilse gosterme
+        bool isAttackerPiece = piece == PieceType.Attacker;
+        if (isAttackerPiece != AttackerTurn) return targets;
+
+        foreach (var (dr, dc) in Directions)
+        {
+            int r = row + dr, c = col + dc;
+            while (IsInside(r, c) && board[r, c] == PieceType.None)
+            {
+                bool isRestricted = IsCorner(r, c) || IsThrone(r, c);
+                if (!isRestricted || piece == PieceType.King)
+                    targets.Add((r, c));
+
+                r += dr;
+                c += dc;
+            }
+        }
+
+        return targets;
+    }
+
     public List<(int row, int col)> ApplyMove(int fromRow, int fromCol, int toRow, int toCol)
     {
         board[toRow, toCol] = board[fromRow, fromCol];
@@ -178,7 +203,6 @@ public class GameState
         return captured;
     }
 
-    // === CAPTURE MANTIGI ===
     bool IsHostileTo(int row, int col, PieceType victim)
     {
         if (!IsInside(row, col)) return false;
@@ -237,12 +261,8 @@ public class GameState
         return captured;
     }
 
-    // === AI ICIN: POZISYON DEGERLENDIRME ===
-    // Pozitif = saldirgan iyi durumda, Negatif = savunmaci iyi durumda.
-    // AI'in zekasi buyuk olcude bu fonksiyonda saklidir.
     public int Evaluate()
     {
-        // Oyun bittiyse net sonuc dondur (cok buyuk/kucuk sayilarla)
         if (GameOver)
             return AttackerWon ? 100000 : -100000;
 
@@ -263,28 +283,20 @@ public class GameState
             }
         }
 
-        // 1) Tas farki: her saldirgan +10, her savunmaci -15
-        // (savunmaci sayica az oldugu icin her biri daha degerli)
         score += attackerCount * 10;
         score -= defenderCount * 15;
 
-        // 2) Kralin koseye yakinligi: kral koseye ne kadar yakinsa
-        // savunmaci o kadar iyi durumda (negatif puan)
         if (kingRow >= 0)
         {
             int last = Size - 1;
-            // Krala en yakin koseye olan mesafe (Chebyshev)
             int distToCorner = Mathf.Min(
                 Mathf.Max(kingRow, kingCol),
                 Mathf.Max(last - kingRow, kingCol),
                 Mathf.Max(kingRow, last - kingCol),
                 Mathf.Max(last - kingRow, last - kingCol)
             );
-            // Mesafe azaldikca savunmaci avantaji artar
             score -= (Size - distToCorner) * 8;
 
-            // 3) Kralin etrafindaki saldirgan baskisi: kac saldirgan komsu?
-            // Saldirgan kuşatmaya yaklastikca pozitif puan
             int pressure = 0;
             foreach (var (dr, dc) in Directions)
             {
