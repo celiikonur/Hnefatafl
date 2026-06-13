@@ -4,10 +4,15 @@ using UnityEngine;
 public class AIController : MonoBehaviour
 {
     public PieceSpawner spawner;
+    public BoardHighlighter highlighter; // son hamle vurgusu
 
     [Header("AI Settings")]
-    public bool aiPlaysAttackers = false; // false = AI savunmaci (sen saldirgansin ve ilk hamle sende)
-    public float thinkDelay = 0.6f; // insansi bir bekleme, aninda oynamasin
+    public bool aiPlaysAttackers = false; // false = AI savunmaci, sen saldirgansin
+    public float thinkDelay = 0.6f;
+
+    [Header("Zorluk")]
+    [Tooltip("1 = Kolay (Genc Viking), 2-3 = Orta (Savasci), 4 = Zor (Reis)")]
+    public int searchDepth = 3;
 
     float timer;
 
@@ -16,14 +21,12 @@ public class AIController : MonoBehaviour
         if (spawner == null || spawner.State == null) return;
         if (spawner.State.GameOver) return;
 
-        // Sira AI'da mi?
         if (spawner.State.AttackerTurn != aiPlaysAttackers)
         {
             timer = 0f;
             return;
         }
 
-        // Dusunme suresi dolmadan oynama
         timer += Time.deltaTime;
         if (timer < thinkDelay) return;
         timer = 0f;
@@ -37,22 +40,20 @@ public class AIController : MonoBehaviour
 
         if (moves.Count == 0)
         {
-            // Hamlesi kalmayan taraf kaybeder (klasik tafl kurali)
             Debug.Log("AI'nin hamlesi kalmadi!");
             return;
         }
 
-        // v1: rastgele sec. (v2'de burasi minimax olacak, gerisi ayni kalacak)
-        Move move = moves[Random.Range(0, moves.Count)];
+        Move bestMove = ChooseBestMove(moves);
 
-        var captured = spawner.State.ApplyMove(move.FromRow, move.FromCol, move.ToRow, move.ToCol);
+        var captured = spawner.State.ApplyMove(
+            bestMove.FromRow, bestMove.FromCol, bestMove.ToRow, bestMove.ToCol);
 
-        // === Gorseli guncelle ===
-        Transform piece = FindPieceAt(move.FromRow, move.FromCol);
+        Transform piece = FindPieceAt(bestMove.FromRow, bestMove.FromCol);
         if (piece != null)
         {
             float offset = (spawner.boardSize - 1) / 2f;
-            Vector3 target = new Vector3(move.ToCol - offset, piece.position.y, move.ToRow - offset);
+            Vector3 target = new Vector3(bestMove.ToCol - offset, piece.position.y, bestMove.ToRow - offset);
             piece.position = target;
         }
 
@@ -62,8 +63,83 @@ public class AIController : MonoBehaviour
             if (victim != null) Destroy(victim.gameObject);
         }
 
+        // Son hamleyi vurgula (oyuncu AI'in ne oynadigini gorsun)
+        if (highlighter != null)
+            highlighter.HighlightMove(bestMove.FromRow, bestMove.FromCol, bestMove.ToRow, bestMove.ToCol);
+
         if (spawner.State.GameOver)
             Debug.Log(spawner.State.AttackerWon ? "SALDIRGANLAR KAZANDI!" : "SAVUNMACILAR KAZANDI!");
+    }
+
+    Move ChooseBestMove(List<Move> moves)
+    {
+        bool maximizing = aiPlaysAttackers;
+        Move bestMove = moves[0];
+        int bestScore = maximizing ? int.MinValue : int.MaxValue;
+
+        foreach (Move move in moves)
+        {
+            GameState sim = spawner.State.Clone();
+            sim.ApplyMove(move.FromRow, move.FromCol, move.ToRow, move.ToCol);
+
+            int score = Minimax(sim, searchDepth - 1, int.MinValue, int.MaxValue, !maximizing);
+
+            if (maximizing && score > bestScore)
+            {
+                bestScore = score;
+                bestMove = move;
+            }
+            else if (!maximizing && score < bestScore)
+            {
+                bestScore = score;
+                bestMove = move;
+            }
+        }
+
+        return bestMove;
+    }
+
+    int Minimax(GameState state, int depth, int alpha, int beta, bool maximizing)
+    {
+        if (depth == 0 || state.GameOver)
+            return state.Evaluate();
+
+        List<Move> moves = state.GetAllLegalMoves();
+        if (moves.Count == 0)
+            return state.Evaluate();
+
+        if (maximizing)
+        {
+            int maxScore = int.MinValue;
+            foreach (Move move in moves)
+            {
+                GameState sim = state.Clone();
+                sim.ApplyMove(move.FromRow, move.FromCol, move.ToRow, move.ToCol);
+
+                int score = Minimax(sim, depth - 1, alpha, beta, false);
+                maxScore = Mathf.Max(maxScore, score);
+
+                alpha = Mathf.Max(alpha, score);
+                if (beta <= alpha) break;
+            }
+            return maxScore;
+        }
+        else
+        {
+            int minScore = int.MaxValue;
+            foreach (Move move in moves)
+            {
+                GameState sim = state.Clone();
+                sim.ApplyMove(move.FromRow, move.FromCol, move.ToRow, move.ToCol);
+
+                int score = Minimax(sim, depth - 1, alpha, beta, true);
+                minScore = Mathf.Min(minScore, score);
+
+                beta = Mathf.Min(beta, score);
+                if (beta <= alpha) break;
+            }
+            return minScore;
+        }
     }
 
     Transform FindPieceAt(int row, int col)

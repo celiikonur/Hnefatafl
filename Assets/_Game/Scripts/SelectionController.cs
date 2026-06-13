@@ -5,6 +5,7 @@ public class SelectionController : MonoBehaviour
 {
     public Material highlightMaterial;
     public PieceSpawner spawner;
+    public BoardHighlighter highlighter; // son hamle vurgusu
 
     Transform selectedPiece;
     Material originalMaterial;
@@ -52,14 +53,12 @@ public class SelectionController : MonoBehaviour
         return t.name.StartsWith("Tile_");
     }
 
-    // Isimden satir/sutun cozme: "Tile_3_5" -> (3, 5)
     (int row, int col) ParseCoords(string objectName)
     {
         string[] parts = objectName.Split('_');
         return (int.Parse(parts[parts.Length - 2]), int.Parse(parts[parts.Length - 1]));
     }
 
-    // Tasin dunya pozisyonundan grid koordinati cozme
     (int row, int col) WorldToGrid(Vector3 pos)
     {
         float offset = (spawner.boardSize - 1) / 2f;
@@ -68,7 +67,6 @@ public class SelectionController : MonoBehaviour
 
     void Select(Transform piece)
     {
-        // Oyun bittiyse veya sira onda degilse sectirme
         if (spawner.State.GameOver) return;
 
         (int row, int col) = WorldToGrid(piece.position);
@@ -93,7 +91,10 @@ public class SelectionController : MonoBehaviour
         (int toRow, int toCol) = ParseCoords(tile.name);
 
         if (!spawner.State.IsLegalMove(selectedRow, selectedCol, toRow, toCol))
-            return; // yasadisi hamle: simdilik sessizce yoksay
+            return;
+
+        // Hamle oncesi kalkis koordinatini sakla (Deselect oncesi)
+        int fromRow = selectedRow, fromCol = selectedCol;
 
         var captured = spawner.State.ApplyMove(selectedRow, selectedCol, toRow, toCol);
 
@@ -101,9 +102,12 @@ public class SelectionController : MonoBehaviour
         target.y = selectedPiece.position.y;
         selectedPiece.position = target;
 
-        // Yenen taslari gorsel olarak kaldir
         foreach (var (r, c) in captured)
             RemovePieceAt(r, c);
+
+        // Son hamleyi vurgula
+        if (highlighter != null)
+            highlighter.HighlightMove(fromRow, fromCol, toRow, toCol);
 
         if (spawner.State.GameOver)
             Debug.Log(spawner.State.AttackerWon ? "SALDIRGANLAR KAZANDI!" : "SAVUNMACILAR KAZANDI!");

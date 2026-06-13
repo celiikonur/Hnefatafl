@@ -542,6 +542,7 @@ GameObject:
   - component: {fileID: 1942108596}
   - component: {fileID: 1942108595}
   - component: {fileID: 1942108594}
+  - component: {fileID: 1942108597}
   m_Layer: 0
   m_Name: GameController
   m_TagString: Untagged
@@ -562,8 +563,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIController
   spawner: {fileID: 1819217831}
+  highlighter: {fileID: 0}
   aiPlaysAttackers: 0
   thinkDelay: 0.6
+  searchDepth: 3
 --- !u!114 &1942108595
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -578,6 +581,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SelectionController
   highlightMaterial: {fileID: 2100000, guid: 25058825d3e51437b8b1e95641f31c45, type: 2}
   spawner: {fileID: 1819217831}
+  highlighter: {fileID: 0}
 --- !u!4 &1942108596
 Transform:
   m_ObjectHideFlags: 0
@@ -593,6 +597,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1942108597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1942108593}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b76908191990b454da5794c1b0199c2f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoardHighlighter
+  board: {fileID: 84762996}
+  highlightMaterial: {fileID: 2100000, guid: 4c7bde1a39cd74692a6f17cd0bed34a9, type: 2}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
