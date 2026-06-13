@@ -12,11 +12,21 @@ public class AIController : MonoBehaviour
     public float thinkDelay = 0.6f;
 
     [Header("Zorluk")]
-    [Tooltip("1 = Kolay (Genc Viking), 2-3 = Orta (Savasci), 4 = Zor (Reis)")]
+    [Tooltip("Menuden gelmezse kullanilacak varsayilan. Menu varsa GameSettings ezer.")]
     public int searchDepth = 3;
 
+    [Tooltip("Acikken zorlugu GameSettings'ten alir (menuden gelen deger).")]
+    public bool useSettingsDepth = true;
+
     float timer;
-    bool moveInProgress; // animasyon dahil hamle suruyor mu
+    bool moveInProgress;
+
+    void Start()
+    {
+        // Menuden gelen zorlugu uygula
+        if (useSettingsDepth)
+            searchDepth = GameSettings.SearchDepth;
+    }
 
     void Update()
     {
@@ -54,11 +64,9 @@ public class AIController : MonoBehaviour
 
         Transform piece = FindPieceAt(bestMove.FromRow, bestMove.FromCol);
 
-        // Son hamleyi vurgula
         if (highlighter != null)
             highlighter.HighlightMove(bestMove.FromRow, bestMove.FromCol, bestMove.ToRow, bestMove.ToCol);
 
-        // Hedef pozisyon
         float offset = (spawner.boardSize - 1) / 2f;
         Vector3 target = new Vector3(
             bestMove.ToCol - offset,

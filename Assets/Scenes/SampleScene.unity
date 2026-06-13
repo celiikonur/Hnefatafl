@@ -947,6 +947,7 @@ MonoBehaviour:
   aiPlaysAttackers: 0
   thinkDelay: 0.6
   searchDepth: 3
+  useSettingsDepth: 1
 --- !u!114 &1942108595
 MonoBehaviour:
   m_ObjectHideFlags: 0
