@@ -3,13 +3,16 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-// Oyun sonu panelini yonetir. Her frame oyunun bitip bitmedigini kontrol eder,
-// bittiyse paneli gosterir ve kazanani yazar. "Tekrar Oyna" sahneyi yeniden yukler.
+// Oyun sonu panelini yonetir. Oyun bitince paneli gosterir, kazanani yazar.
+// "Tekrar Oyna" sahneyi yeniden yukler; "Ana Menu" menu sahnesine doner.
 public class GameUI : MonoBehaviour
 {
     public PieceSpawner spawner;
-    public GameObject gameOverPanel; // basta gizli, oyun bitince acilir
-    public TMP_Text resultText;      // "Saldirganlar Kazandi!" vb.
+    public GameObject gameOverPanel;
+    public TMP_Text resultText;
+
+    [Tooltip("Ana menu sahnesinin tam adi (Build Settings'teki isim)")]
+    public string menuSceneName = "MainMenu";
 
     bool shown;
 
@@ -43,11 +46,16 @@ public class GameUI : MonoBehaviour
             gameOverPanel.SetActive(true);
     }
 
-    // Tekrar Oyna butonu bunu cagiracak
+    // Tekrar Oyna butonu
     public void Restart()
     {
-        // Aktif sahneyi yeniden yukle: her sey Start()'ta sifirdan kurulur
         Scene current = SceneManager.GetActiveScene();
         SceneManager.LoadScene(current.name);
+    }
+
+    // Ana Menu butonu
+    public void GoToMenu()
+    {
+        SceneManager.LoadScene(menuSceneName);
     }
 }
