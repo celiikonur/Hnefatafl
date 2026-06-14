@@ -22,8 +22,12 @@ public class GameState
     public bool AttackerTurn { get; private set; } = true;
     public bool GameOver { get; private set; }
     public bool AttackerWon { get; private set; }
+    public bool IsDraw { get; private set; } // berabere mi
 
     static readonly (int dr, int dc)[] Directions = { (1, 0), (-1, 0), (0, 1), (0, -1) };
+
+    // Tekrar kurali icin pozisyon gecmisi (kac kez gorulduyse say)
+    Dictionary<string, int> positionHistory = new Dictionary<string, int>();
 
     public GameState(int size, string[] layout)
     {
@@ -43,6 +47,8 @@ public class GameState
                 };
             }
         }
+
+        RecordPosition();
     }
 
     GameState(int size)
@@ -58,6 +64,10 @@ public class GameState
         copy.AttackerTurn = AttackerTurn;
         copy.GameOver = GameOver;
         copy.AttackerWon = AttackerWon;
+        copy.IsDraw = IsDraw;
+        // Not: positionHistory'yi KOPYALAMIYORUZ. AI'in sanal simulasyonlari
+        // gercek oyunun tekrar sayacini etkilememeli; AI sadece pozisyon
+        // degerini hesaplar, tekrar takibi yalnizca gercek oyunda onemli.
         return copy;
     }
 
@@ -144,8 +154,6 @@ public class GameState
         return moves;
     }
 
-    // === TEK TASIN HEDEFLERI (gecerli hamle gostergeleri icin) ===
-    // Verilen karedeki tasin gidebilecegi tum kareleri dondurur.
     public List<(int row, int col)> GetLegalMovesFrom(int row, int col)
     {
         var targets = new List<(int, int)>();
@@ -155,7 +163,6 @@ public class GameState
         PieceType piece = board[row, col];
         if (piece == PieceType.None) return targets;
 
-        // Sirasi degilse gosterme
         bool isAttackerPiece = piece == PieceType.Attacker;
         if (isAttackerPiece != AttackerTurn) return targets;
 
@@ -200,6 +207,11 @@ public class GameState
         }
 
         AttackerTurn = !AttackerTurn;
+
+        // Tekrar kurali: yeni pozisyonu kaydet, 3. tekrar -> berabere
+        if (!GameOver)
+            CheckRepetition();
+
         return captured;
     }
 
@@ -237,18 +249,8 @@ public class GameState
 
             if (victim == PieceType.King)
             {
-                bool surrounded = true;
-                foreach (var (kr, kc) in Directions)
-                {
-                    int nr = vr + kr, nc = vc + kc;
-                    if (!IsInside(nr, nc)) { surrounded = false; break; }
-                    if (board[nr, nc] != PieceType.Attacker && !IsThrone(nr, nc))
-                    {
-                        surrounded = false;
-                        break;
-                    }
-                }
-                if (surrounded) captured.Add((vr, vc));
+                if (IsKingCaptured(vr, vc))
+                    captured.Add((vr, vc));
             }
             else
             {
@@ -261,10 +263,66 @@ public class GameState
         return captured;
     }
 
+    // === KRAL YAKALAMA (kenar kuralı dahil) ===
+    // Kral, TAHTA ICINDEKI tum komsulari dusmanca (saldirgan veya taht) ise yakalanir.
+    // Tahta disi komsular "zaten kapali" sayilir -> kenardaki kral 3 saldirgan + kenar
+    // ile, kosedeki kral 2 saldirgan + iki kenar ile yakalanabilir.
+    bool IsKingCaptured(int kingRow, int kingCol)
+    {
+        foreach (var (dr, dc) in Directions)
+        {
+            int nr = kingRow + dr, nc = kingCol + dc;
+
+            // Tahta disi komsu: kenar zaten kralin kacisini engelliyor, "kapali" say
+            if (!IsInside(nr, nc)) continue;
+
+            // Tahta ici komsu dusmanca degilse (saldirgan da degil, taht da degil) -> kral kurtulur
+            bool hostile = board[nr, nc] == PieceType.Attacker || IsThrone(nr, nc);
+            if (!hostile) return false;
+        }
+        return true;
+    }
+
+    // === TEKRAR / BERABERE ===
+    void RecordPosition()
+    {
+        string key = PositionKey();
+        if (positionHistory.ContainsKey(key))
+            positionHistory[key]++;
+        else
+            positionHistory[key] = 1;
+    }
+
+    void CheckRepetition()
+    {
+        RecordPosition();
+        string key = PositionKey();
+        // Ayni pozisyon 3. kez olustuysa berabere
+        if (positionHistory[key] >= 3)
+        {
+            GameOver = true;
+            IsDraw = true;
+        }
+    }
+
+    // Pozisyonu benzersiz bir metne cevir (tahta + sira)
+    string PositionKey()
+    {
+        var sb = new System.Text.StringBuilder(Size * Size + 1);
+        for (int r = 0; r < Size; r++)
+            for (int c = 0; c < Size; c++)
+                sb.Append((int)board[r, c]);
+        sb.Append(AttackerTurn ? 'A' : 'D');
+        return sb.ToString();
+    }
+
     public int Evaluate()
     {
         if (GameOver)
+        {
+            if (IsDraw) return 0; // berabere notr
             return AttackerWon ? 100000 : -100000;
+        }
 
         int score = 0;
         int kingRow = -1, kingCol = -1;

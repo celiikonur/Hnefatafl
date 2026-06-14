@@ -3,8 +3,6 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
-// Oyun sonu panelini yonetir. Oyun bitince paneli gosterir, kazanani yazar.
-// "Tekrar Oyna" sahneyi yeniden yukler; "Ana Menu" menu sahnesine doner.
 public class GameUI : MonoBehaviour
 {
     public PieceSpawner spawner;
@@ -37,23 +35,24 @@ public class GameUI : MonoBehaviour
 
         if (resultText != null)
         {
-            resultText.text = spawner.State.AttackerWon
-                ? "Saldirganlar Kazandi!"
-                : "Savunmacilar Kazandi!";
+            if (spawner.State.IsDraw)
+                resultText.text = "Berabere!";
+            else
+                resultText.text = spawner.State.AttackerWon
+                    ? "Saldirganlar Kazandi!"
+                    : "Savunmacilar Kazandi!";
         }
 
         if (gameOverPanel != null)
             gameOverPanel.SetActive(true);
     }
 
-    // Tekrar Oyna butonu
     public void Restart()
     {
         Scene current = SceneManager.GetActiveScene();
         SceneManager.LoadScene(current.name);
     }
 
-    // Ana Menu butonu
     public void GoToMenu()
     {
         SceneManager.LoadScene(menuSceneName);
