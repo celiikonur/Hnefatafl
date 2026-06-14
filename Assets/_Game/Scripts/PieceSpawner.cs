@@ -8,13 +8,13 @@ public class PieceSpawner : MonoBehaviour
     public Material defenderMaterial;
     public Material kingMaterial;
 
+    [Tooltip("Calisma aninda GameSettings'ten okunur; burasi sadece varsayilan.")]
     public int boardSize = 11;
 
     public GameState State { get; private set; }
 
-    // Copenhagen 11x11 dizilimi
-    // A = saldirgan, D = savunmaci, K = kral
-    string[] layout = new string[]
+    // Copenhagen 11x11
+    static readonly string[] Layout11 = new string[]
     {
         "...AAAAA...",
         ".....A.....",
@@ -29,13 +29,32 @@ public class PieceSpawner : MonoBehaviour
         "...AAAAA..."
     };
 
+    // Tablut 9x9
+    static readonly string[] Layout9 = new string[]
+    {
+        "...AAA...",
+        "....A....",
+        "....D....",
+        "A...D...A",
+        "AA.DKD.AA",
+        "A...D...A",
+        "....D....",
+        "....A....",
+        "...AAA..."
+    };
+
     void Start()
     {
+        // Menuden gelen boyutu uygula
+        boardSize = GameSettings.BoardSize;
+
+        string[] layout = (boardSize == 9) ? Layout9 : Layout11;
+
         State = new GameState(boardSize, layout);
-        SpawnPieces();
+        SpawnPieces(layout);
     }
 
-    void SpawnPieces()
+    void SpawnPieces(string[] layout)
     {
         float offset = (boardSize - 1) / 2f;
 

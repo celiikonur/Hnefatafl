@@ -1,16 +1,28 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Ana menu mantigi. Zorluk butonlari secimi GameSettings'e yazar,
-// sonra oyun sahnesini yukler.
+// Ana menu mantigi. Once mod (Copenhagen 11 / Tablut 9) ve zorluk secilir,
+// sonra oyun sahnesi yuklenir. Secimler GameSettings'e yazilir.
 public class MenuController : MonoBehaviour
 {
     [Tooltip("Oyun sahnesinin tam adi (Build Settings'teki isim)")]
     public string gameSceneName = "SampleScene";
 
-    // === Zorluk butonlari ===
-    // Her biri bir Button'in OnClick'ine baglanacak.
+    // === MOD SECIMI ===
+    // Bu butonlar sadece GameSettings'i ayarlar, sahne yuklemez.
+    // (Oyuncu once mod, sonra zorluk secer; ya da tersi.)
+    public void SelectCopenhagen()
+    {
+        GameSettings.BoardSize = 11;
+    }
 
+    public void SelectTablut()
+    {
+        GameSettings.BoardSize = 9;
+    }
+
+    // === ZORLUK + BASLAT ===
+    // Zorluk butonu hem zorlugu ayarlar hem oyunu baslatir.
     public void PlayEasy()
     {
         GameSettings.SetEasy();
@@ -34,7 +46,6 @@ public class MenuController : MonoBehaviour
         SceneManager.LoadScene(gameSceneName);
     }
 
-    // Cikis butonu (opsiyonel; editorde ise yaramaz, build'de calisir)
     public void QuitGame()
     {
         Application.Quit();

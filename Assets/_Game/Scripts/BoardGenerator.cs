@@ -3,6 +3,7 @@ using UnityEngine;
 public class BoardGenerator : MonoBehaviour
 {
     [Header("Board Settings")]
+    [Tooltip("Calisma aninda GameSettings'ten okunur; burasi sadece varsayilan.")]
     public int boardSize = 11;
     public GameObject tilePrefab;
     public Material lightMaterial;
@@ -11,6 +12,8 @@ public class BoardGenerator : MonoBehaviour
 
     void Start()
     {
+        // Menuden gelen boyutu uygula (PieceSpawner ile ayni boyut olmali)
+        boardSize = GameSettings.BoardSize;
         GenerateBoard();
     }
 
@@ -28,26 +31,27 @@ public class BoardGenerator : MonoBehaviour
 
                 Renderer rend = tile.GetComponent<Renderer>();
 
-if (IsSpecialTile(row, col))
-{
-    rend.material = specialMaterial;
-}
-else
-{
-    bool isLight = (row + col) % 2 == 0;
-    rend.material = isLight ? lightMaterial : darkMaterial;
-}
+                if (IsSpecialTile(row, col))
+                {
+                    rend.material = specialMaterial;
+                }
+                else
+                {
+                    bool isLight = (row + col) % 2 == 0;
+                    rend.material = isLight ? lightMaterial : darkMaterial;
+                }
             }
         }
     }
+
     bool IsSpecialTile(int row, int col)
-{
-    int last = boardSize - 1;
-    int center = boardSize / 2;
+    {
+        int last = boardSize - 1;
+        int center = boardSize / 2;
 
-    bool isCorner = (row == 0 || row == last) && (col == 0 || col == last);
-    bool isThrone = (row == center && col == center);
+        bool isCorner = (row == 0 || row == last) && (col == 0 || col == last);
+        bool isThrone = (row == center && col == center);
 
-    return isCorner || isThrone;
-}
+        return isCorner || isThrone;
+    }
 }
