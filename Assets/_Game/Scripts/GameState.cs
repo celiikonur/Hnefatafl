@@ -22,17 +22,22 @@ public class GameState
     public bool AttackerTurn { get; private set; } = true;
     public bool GameOver { get; private set; }
     public bool AttackerWon { get; private set; }
-    public bool IsDraw { get; private set; } // berabere mi
+    public bool IsDraw { get; private set; }
+
+    // Tekrar takibi yalnizca GERCEK oyunda yapilir. AI simulasyonlarinda
+    // (Clone'lanan kopyalarda) bu kapali olur -> binlerce gereksiz string
+    // uretimi engellenir, minimax cok daha hizli calisir.
+    bool trackRepetition = true;
 
     static readonly (int dr, int dc)[] Directions = { (1, 0), (-1, 0), (0, 1), (0, -1) };
 
-    // Tekrar kurali icin pozisyon gecmisi (kac kez gorulduyse say)
-    Dictionary<string, int> positionHistory = new Dictionary<string, int>();
+    Dictionary<string, int> positionHistory;
 
     public GameState(int size, string[] layout)
     {
         Size = size;
         board = new PieceType[size, size];
+        positionHistory = new Dictionary<string, int>();
 
         for (int row = 0; row < size; row++)
         {
@@ -57,6 +62,7 @@ public class GameState
         board = new PieceType[size, size];
     }
 
+    // AI icin kopya: tekrar takibi KAPALI (hiz icin), gecmis kopyalanmaz.
     public GameState Clone()
     {
         var copy = new GameState(Size);
@@ -65,9 +71,7 @@ public class GameState
         copy.GameOver = GameOver;
         copy.AttackerWon = AttackerWon;
         copy.IsDraw = IsDraw;
-        // Not: positionHistory'yi KOPYALAMIYORUZ. AI'in sanal simulasyonlari
-        // gercek oyunun tekrar sayacini etkilememeli; AI sadece pozisyon
-        // degerini hesaplar, tekrar takibi yalnizca gercek oyunda onemli.
+        copy.trackRepetition = false; // simulasyon: tekrar takibi yok
         return copy;
     }
 
@@ -208,8 +212,8 @@ public class GameState
 
         AttackerTurn = !AttackerTurn;
 
-        // Tekrar kurali: yeni pozisyonu kaydet, 3. tekrar -> berabere
-        if (!GameOver)
+        // Tekrar kurali SADECE gercek oyunda (simulasyonda degil)
+        if (trackRepetition && !GameOver)
             CheckRepetition();
 
         return captured;
@@ -263,29 +267,21 @@ public class GameState
         return captured;
     }
 
-    // === KRAL YAKALAMA (kenar kuralı dahil) ===
-    // Kral, TAHTA ICINDEKI tum komsulari dusmanca (saldirgan veya taht) ise yakalanir.
-    // Tahta disi komsular "zaten kapali" sayilir -> kenardaki kral 3 saldirgan + kenar
-    // ile, kosedeki kral 2 saldirgan + iki kenar ile yakalanabilir.
     bool IsKingCaptured(int kingRow, int kingCol)
     {
         foreach (var (dr, dc) in Directions)
         {
             int nr = kingRow + dr, nc = kingCol + dc;
-
-            // Tahta disi komsu: kenar zaten kralin kacisini engelliyor, "kapali" say
-            if (!IsInside(nr, nc)) continue;
-
-            // Tahta ici komsu dusmanca degilse (saldirgan da degil, taht da degil) -> kral kurtulur
+            if (!IsInside(nr, nc)) continue; // kenar = kapali
             bool hostile = board[nr, nc] == PieceType.Attacker || IsThrone(nr, nc);
             if (!hostile) return false;
         }
         return true;
     }
 
-    // === TEKRAR / BERABERE ===
     void RecordPosition()
     {
+        if (positionHistory == null) return;
         string key = PositionKey();
         if (positionHistory.ContainsKey(key))
             positionHistory[key]++;
@@ -295,9 +291,9 @@ public class GameState
 
     void CheckRepetition()
     {
+        if (positionHistory == null) return;
         RecordPosition();
         string key = PositionKey();
-        // Ayni pozisyon 3. kez olustuysa berabere
         if (positionHistory[key] >= 3)
         {
             GameOver = true;
@@ -305,7 +301,6 @@ public class GameState
         }
     }
 
-    // Pozisyonu benzersiz bir metne cevir (tahta + sira)
     string PositionKey()
     {
         var sb = new System.Text.StringBuilder(Size * Size + 1);
@@ -316,11 +311,12 @@ public class GameState
         return sb.ToString();
     }
 
+    // === DEGERLENDIRME (tuning burada) ===
     public int Evaluate()
     {
         if (GameOver)
         {
-            if (IsDraw) return 0; // berabere notr
+            if (IsDraw) return 0;
             return AttackerWon ? 100000 : -100000;
         }
 
