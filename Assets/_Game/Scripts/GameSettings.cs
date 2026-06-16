@@ -1,16 +1,18 @@
 // Sahneler arasi tasinan ayarlar. Static oldugu icin sahne degisince
-// sifirlanmaz; menude secilen zorluk oyun sahnesine bu sekilde tasinir.
-// (MonoBehaviour DEGIL - hicbir objeye eklenmez, sadece veri tutar.)
+// sifirlanmaz; menude secilenler oyun sahnesine bu sekilde tasinir.
 public static class GameSettings
 {
-    // Varsayilan: Orta zorluk
+    // Zorluk (minimax derinligi)
     public static int SearchDepth = 3;
 
-    // Ileride buraya baska ayarlar da eklenecek:
-    // board boyutu (Copenhagen/Tablut), secili karakter, ses ac/kapa vb.
+    // Tahta boyutu: 11 = Copenhagen, 9 = Tablut
     public static int BoardSize = 11;
 
-    // Kolaylik icin zorluk isimleri
+    // Oyuncu saldirgan mi oynuyor? true = saldirgan, false = savunmaci
+    // (Hnefatafl'da saldirgan ilk hamleyi yapar.)
+    public static bool PlayerIsAttacker = true;
+
+    // === Zorluk yardimcilari ===
     public static void SetEasy()   { SearchDepth = 1; }
     public static void SetMedium() { SearchDepth = 3; }
     public static void SetHard()   { SearchDepth = 4; }

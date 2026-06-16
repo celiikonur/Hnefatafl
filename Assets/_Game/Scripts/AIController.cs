@@ -8,24 +8,27 @@ public class AIController : MonoBehaviour
     public PieceAnimator animator;
 
     [Header("AI Settings")]
+    [Tooltip("Calisma aninda GameSettings'ten okunur (oyuncunun tersi).")]
     public bool aiPlaysAttackers = false;
     public float thinkDelay = 0.6f;
 
     [Header("Zorluk")]
-    [Tooltip("Menuden gelmezse kullanilacak varsayilan. Menu varsa GameSettings ezer.")]
     public int searchDepth = 3;
 
-    [Tooltip("Acikken zorlugu GameSettings'ten alir (menuden gelen deger).")]
-    public bool useSettingsDepth = true;
+    [Tooltip("Acikken taraf ve zorlugu GameSettings'ten alir (menuden gelen).")]
+    public bool useSettings = true;
 
     float timer;
     bool moveInProgress;
 
     void Start()
     {
-        // Menuden gelen zorlugu uygula
-        if (useSettingsDepth)
+        if (useSettings)
+        {
+            // AI, oyuncunun TERSI tarafi oynar
+            aiPlaysAttackers = !GameSettings.PlayerIsAttacker;
             searchDepth = GameSettings.SearchDepth;
+        }
     }
 
     void Update()

@@ -1,28 +1,30 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-// Ana menu mantigi. Once mod (Copenhagen 11 / Tablut 9) ve zorluk secilir,
-// sonra oyun sahnesi yuklenir. Secimler GameSettings'e yazilir.
+// Ana menu mantigi. Mod ve taraf secimi TOGGLE ile yapilir (iOS tarzi anahtar).
+// Zorluk butonu oyunu baslatir. Secimler GameSettings'e yazilir.
 public class MenuController : MonoBehaviour
 {
     [Tooltip("Oyun sahnesinin tam adi (Build Settings'teki isim)")]
     public string gameSceneName = "SampleScene";
 
-    // === MOD SECIMI ===
-    // Bu butonlar sadece GameSettings'i ayarlar, sahne yuklemez.
-    // (Oyuncu once mod, sonra zorluk secer; ya da tersi.)
-    public void SelectCopenhagen()
+    // === TOGGLE FONKSIYONLARI ===
+    // Toggle'in OnValueChanged olayina baglanir; isOn parametresini Unity otomatik gonderir.
+
+    // Mod toggle: ON = Tablut (9), OFF = Copenhagen (11)
+    public void OnModeToggle(bool isOn)
     {
-        GameSettings.BoardSize = 11;
+        GameSettings.BoardSize = isOn ? 9 : 11;
     }
 
-    public void SelectTablut()
+    // Taraf toggle: ON = Savunmaci, OFF = Saldirgan
+    public void OnSideToggle(bool isOn)
     {
-        GameSettings.BoardSize = 9;
+        GameSettings.PlayerIsAttacker = !isOn;
     }
 
     // === ZORLUK + BASLAT ===
-    // Zorluk butonu hem zorlugu ayarlar hem oyunu baslatir.
     public void PlayEasy()
     {
         GameSettings.SetEasy();
