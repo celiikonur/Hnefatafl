@@ -8,15 +8,17 @@ public class AIController : MonoBehaviour
     public PieceAnimator animator;
 
     [Header("AI Settings")]
-    [Tooltip("Calisma aninda GameSettings'ten okunur (oyuncunun tersi).")]
     public bool aiPlaysAttackers = false;
     public float thinkDelay = 0.6f;
 
     [Header("Zorluk")]
     public int searchDepth = 3;
 
-    [Tooltip("Acikken taraf ve zorlugu GameSettings'ten alir (menuden gelen).")]
+    [Tooltip("Acikken taraf ve zorlugu GameSettings'ten alir.")]
     public bool useSettings = true;
+
+    // Kazanc/kayip esigi: bunun ustundeki skorlar "terminal" (oyun biten) kabul edilir.
+    const int WIN_SCORE = 100000;
 
     float timer;
     bool moveInProgress;
@@ -25,7 +27,6 @@ public class AIController : MonoBehaviour
     {
         if (useSettings)
         {
-            // AI, oyuncunun TERSI tarafi oynar
             aiPlaysAttackers = !GameSettings.PlayerIsAttacker;
             searchDepth = GameSettings.SearchDepth;
         }
@@ -136,7 +137,18 @@ public class AIController : MonoBehaviour
 
     int Minimax(GameState state, int depth, int alpha, int beta, bool maximizing)
     {
-        if (depth == 0 || state.GameOver)
+        // Oyun bittiyse: kazanc/kayip skorunu DERINLIGE gore ayarla.
+        // Boylece "yakin zafer" > "uzak zafer" olur -> AI en kisa yoldan kazanir,
+        // garantili pozisyonda taslarini eritip oyunu uzatmaz.
+        if (state.GameOver)
+        {
+            int raw = state.Evaluate(); // +WIN / -WIN / 0 (berabere)
+            if (raw > 0) return raw - (searchDepth - depth);   // erken kazanc daha degerli
+            if (raw < 0) return raw + (searchDepth - depth);   // gec kayip daha az kotu
+            return 0;
+        }
+
+        if (depth == 0)
             return state.Evaluate();
 
         List<Move> moves = state.GetAllLegalMoves();
