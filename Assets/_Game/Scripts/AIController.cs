@@ -13,6 +13,8 @@ public class AIController : MonoBehaviour
 
     [Header("Zorluk")]
     public int searchDepth = 3;
+    [Range(0f, 1f)]
+    public float mistakeChance = 0.15f; // en iyi yerine rastgele hamle olasiligi
 
     [Tooltip("Acikken taraf ve zorlugu GameSettings'ten alir.")]
     public bool useSettings = true;
@@ -26,6 +28,7 @@ public class AIController : MonoBehaviour
         {
             aiPlaysAttackers = !GameSettings.PlayerIsAttacker;
             searchDepth = GameSettings.SearchDepth;
+            mistakeChance = GameSettings.MistakeChance;
         }
     }
 
@@ -50,7 +53,6 @@ public class AIController : MonoBehaviour
 
     void PlayTurn()
     {
-        // Move ordering: hizli alpha-beta budama icin sirali hamleler
         List<Move> moves = spawner.State.GetOrderedMoves();
 
         if (moves.Count == 0)
@@ -59,21 +61,32 @@ public class AIController : MonoBehaviour
             return;
         }
 
-        Move bestMove = ChooseBestMove(moves);
+        Move chosen;
+
+        // Hata payi: bazen en iyi hamle yerine rastgele yasal hamle oyna (acemi gibi).
+        // Zor'da mistakeChance=0 oldugu icin bu blok hic calismaz.
+        if (mistakeChance > 0f && Random.value < mistakeChance)
+        {
+            chosen = moves[Random.Range(0, moves.Count)];
+        }
+        else
+        {
+            chosen = ChooseBestMove(moves);
+        }
 
         var captured = spawner.State.ApplyMove(
-            bestMove.FromRow, bestMove.FromCol, bestMove.ToRow, bestMove.ToCol);
+            chosen.FromRow, chosen.FromCol, chosen.ToRow, chosen.ToCol);
 
-        Transform piece = FindPieceAt(bestMove.FromRow, bestMove.FromCol);
+        Transform piece = FindPieceAt(chosen.FromRow, chosen.FromCol);
 
         if (highlighter != null)
-            highlighter.HighlightMove(bestMove.FromRow, bestMove.FromCol, bestMove.ToRow, bestMove.ToCol);
+            highlighter.HighlightMove(chosen.FromRow, chosen.FromCol, chosen.ToRow, chosen.ToCol);
 
         float offset = (spawner.boardSize - 1) / 2f;
         Vector3 target = new Vector3(
-            bestMove.ToCol - offset,
+            chosen.ToCol - offset,
             piece != null ? piece.position.y : 0.2f,
-            bestMove.ToRow - offset);
+            chosen.ToRow - offset);
 
         moveInProgress = true;
 
@@ -135,7 +148,6 @@ public class AIController : MonoBehaviour
 
     int Minimax(GameState state, int depth, int alpha, int beta, bool maximizing)
     {
-        // Oyun bittiyse: kazanc/kayip skorunu derinlige gore ayarla (mate-in-N)
         if (state.GameOver)
         {
             int raw = state.Evaluate();
@@ -147,7 +159,6 @@ public class AIController : MonoBehaviour
         if (depth == 0)
             return state.Evaluate();
 
-        // Move ordering burada da: ic dugumlerde de budama hizlanir
         List<Move> moves = state.GetOrderedMoves();
         if (moves.Count == 0)
             return state.Evaluate();
