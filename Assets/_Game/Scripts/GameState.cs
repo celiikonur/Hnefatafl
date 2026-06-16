@@ -24,9 +24,6 @@ public class GameState
     public bool AttackerWon { get; private set; }
     public bool IsDraw { get; private set; }
 
-    // Tekrar takibi yalnizca GERCEK oyunda yapilir. AI simulasyonlarinda
-    // (Clone'lanan kopyalarda) bu kapali olur -> binlerce gereksiz string
-    // uretimi engellenir, minimax cok daha hizli calisir.
     bool trackRepetition = true;
 
     static readonly (int dr, int dc)[] Directions = { (1, 0), (-1, 0), (0, 1), (0, -1) };
@@ -62,7 +59,6 @@ public class GameState
         board = new PieceType[size, size];
     }
 
-    // AI icin kopya: tekrar takibi KAPALI (hiz icin), gecmis kopyalanmaz.
     public GameState Clone()
     {
         var copy = new GameState(Size);
@@ -71,7 +67,7 @@ public class GameState
         copy.GameOver = GameOver;
         copy.AttackerWon = AttackerWon;
         copy.IsDraw = IsDraw;
-        copy.trackRepetition = false; // simulasyon: tekrar takibi yok
+        copy.trackRepetition = false;
         return copy;
     }
 
@@ -158,6 +154,74 @@ public class GameState
         return moves;
     }
 
+    // === MOVE ORDERING (AI hizlandirma) ===
+    // Hamleleri "muhtemelen iyi" olanlar one gelecek sekilde siralar.
+    // Alpha-beta budamasi boylece cok daha erken devreye girer -> ayni
+    // sonuc, daha az pozisyon taramasi. Zeka ayni, hiz artar.
+    public List<Move> GetOrderedMoves()
+    {
+        var moves = GetAllLegalMoves();
+
+        // Her hamleye hizli bir "umut puani" ver, buyukten kucuge sirala.
+        moves.Sort((a, b) => MoveHeuristic(b).CompareTo(MoveHeuristic(a)));
+        return moves;
+    }
+
+    // Hamleyi gercekten uygulamadan, kabaca ne kadar umut verici oldugunu tahmin et.
+    int MoveHeuristic(Move m)
+    {
+        int h = 0;
+        PieceType piece = board[m.FromRow, m.FromCol];
+
+        // 1) Capture potansiyeli: hedefin yaninda dusman + arkasi bizim/engel mi?
+        foreach (var (dr, dc) in Directions)
+        {
+            int vr = m.ToRow + dr, vc = m.ToCol + dc;
+            if (!IsInside(vr, vc)) continue;
+
+            PieceType victim = board[vr, vc];
+            if (victim == PieceType.None) continue;
+
+            bool moverIsAttacker = piece == PieceType.Attacker;
+            bool victimIsAttacker = victim == PieceType.Attacker;
+            if (moverIsAttacker == victimIsAttacker) continue; // dost
+
+            // Kurbanin obur tarafi dusmanca mi (kaba capture tahmini)
+            int or_ = vr + dr, oc = vc + dc;
+            bool backHostile =
+                IsCorner(or_, oc) ||
+                (IsInside(or_, oc) && board[or_, oc] != PieceType.None &&
+                 (board[or_, oc] == PieceType.Attacker) != victimIsAttacker);
+
+            if (victim == PieceType.King) h += 500;      // krala dokunmak cok degerli
+            else if (backHostile) h += 100;              // muhtemel capture
+            else h += 10;                                // dusman komsulugu
+        }
+
+        // 2) Kral koseye dogru gidiyorsa (savunmaci icin degerli)
+        if (piece == PieceType.King)
+        {
+            int last = Size - 1;
+            int distNow = CornerDist(m.FromRow, m.FromCol);
+            int distAfter = CornerDist(m.ToRow, m.ToCol);
+            if (distAfter < distNow) h += 200;           // koseye yaklasiyor
+            if (IsCorner(m.ToRow, m.ToCol)) h += 10000;  // direkt kazanc!
+        }
+
+        return h;
+    }
+
+    int CornerDist(int row, int col)
+    {
+        int last = Size - 1;
+        return Mathf.Min(
+            Mathf.Max(row, col),
+            Mathf.Max(last - row, col),
+            Mathf.Max(row, last - col),
+            Mathf.Max(last - row, last - col)
+        );
+    }
+
     public List<(int row, int col)> GetLegalMovesFrom(int row, int col)
     {
         var targets = new List<(int, int)>();
@@ -212,7 +276,6 @@ public class GameState
 
         AttackerTurn = !AttackerTurn;
 
-        // Tekrar kurali SADECE gercek oyunda (simulasyonda degil)
         if (trackRepetition && !GameOver)
             CheckRepetition();
 
@@ -272,7 +335,7 @@ public class GameState
         foreach (var (dr, dc) in Directions)
         {
             int nr = kingRow + dr, nc = kingCol + dc;
-            if (!IsInside(nr, nc)) continue; // kenar = kapali
+            if (!IsInside(nr, nc)) continue;
             bool hostile = board[nr, nc] == PieceType.Attacker || IsThrone(nr, nc);
             if (!hostile) return false;
         }
@@ -311,7 +374,6 @@ public class GameState
         return sb.ToString();
     }
 
-    // === DEGERLENDIRME (tuning burada) ===
     public int Evaluate()
     {
         if (GameOver)
@@ -342,13 +404,7 @@ public class GameState
 
         if (kingRow >= 0)
         {
-            int last = Size - 1;
-            int distToCorner = Mathf.Min(
-                Mathf.Max(kingRow, kingCol),
-                Mathf.Max(last - kingRow, kingCol),
-                Mathf.Max(kingRow, last - kingCol),
-                Mathf.Max(last - kingRow, last - kingCol)
-            );
+            int distToCorner = CornerDist(kingRow, kingCol);
             score -= (Size - distToCorner) * 8;
 
             int pressure = 0;

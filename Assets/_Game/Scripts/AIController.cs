@@ -17,9 +17,6 @@ public class AIController : MonoBehaviour
     [Tooltip("Acikken taraf ve zorlugu GameSettings'ten alir.")]
     public bool useSettings = true;
 
-    // Kazanc/kayip esigi: bunun ustundeki skorlar "terminal" (oyun biten) kabul edilir.
-    const int WIN_SCORE = 100000;
-
     float timer;
     bool moveInProgress;
 
@@ -53,7 +50,8 @@ public class AIController : MonoBehaviour
 
     void PlayTurn()
     {
-        List<Move> moves = spawner.State.GetAllLegalMoves();
+        // Move ordering: hizli alpha-beta budama icin sirali hamleler
+        List<Move> moves = spawner.State.GetOrderedMoves();
 
         if (moves.Count == 0)
         {
@@ -137,21 +135,20 @@ public class AIController : MonoBehaviour
 
     int Minimax(GameState state, int depth, int alpha, int beta, bool maximizing)
     {
-        // Oyun bittiyse: kazanc/kayip skorunu DERINLIGE gore ayarla.
-        // Boylece "yakin zafer" > "uzak zafer" olur -> AI en kisa yoldan kazanir,
-        // garantili pozisyonda taslarini eritip oyunu uzatmaz.
+        // Oyun bittiyse: kazanc/kayip skorunu derinlige gore ayarla (mate-in-N)
         if (state.GameOver)
         {
-            int raw = state.Evaluate(); // +WIN / -WIN / 0 (berabere)
-            if (raw > 0) return raw - (searchDepth - depth);   // erken kazanc daha degerli
-            if (raw < 0) return raw + (searchDepth - depth);   // gec kayip daha az kotu
+            int raw = state.Evaluate();
+            if (raw > 0) return raw - (searchDepth - depth);
+            if (raw < 0) return raw + (searchDepth - depth);
             return 0;
         }
 
         if (depth == 0)
             return state.Evaluate();
 
-        List<Move> moves = state.GetAllLegalMoves();
+        // Move ordering burada da: ic dugumlerde de budama hizlanir
+        List<Move> moves = state.GetOrderedMoves();
         if (moves.Count == 0)
             return state.Evaluate();
 
