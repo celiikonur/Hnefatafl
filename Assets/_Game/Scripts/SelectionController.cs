@@ -9,6 +9,7 @@ public class SelectionController : MonoBehaviour
     public PieceAnimator animator;
 
     Transform selectedPiece;
+    Renderer selectedRenderer;
     Material originalMaterial;
     int selectedRow = -1, selectedCol = -1;
 
@@ -17,7 +18,6 @@ public class SelectionController : MonoBehaviour
         if (Mouse.current == null) return;
         if (!Mouse.current.leftButton.wasPressedThisFrame) return;
 
-        // Animasyon oynarken girdi alma (kaos olmasin)
         if (animator != null && animator.IsAnimating) return;
 
         Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
@@ -26,9 +26,12 @@ public class SelectionController : MonoBehaviour
         {
             Transform target = hit.transform;
 
-            if (IsPiece(target))
+            // Tiklanan sey bir tasin child'i olabilir; ust parent'a cik
+            Transform pieceRoot = FindPieceRoot(target);
+
+            if (pieceRoot != null)
             {
-                Select(target);
+                Select(pieceRoot);
             }
             else if (IsTile(target) && selectedPiece != null)
             {
@@ -45,11 +48,24 @@ public class SelectionController : MonoBehaviour
         }
     }
 
-    bool IsPiece(Transform t)
+    // Tiklanan transform veya parent'lari bir tas mi? Tas root'unu dondur.
+    Transform FindPieceRoot(Transform t)
     {
-        return t.name.StartsWith("Attacker")
-            || t.name.StartsWith("Defender")
-            || t.name == "King";
+        Transform current = t;
+        while (current != null)
+        {
+            if (IsPieceName(current.name))
+                return current;
+            current = current.parent;
+        }
+        return null;
+    }
+
+    bool IsPieceName(string n)
+    {
+        return n.StartsWith("Attacker")
+            || n.StartsWith("Defender")
+            || n == "King";
     }
 
     bool IsTile(Transform t)
@@ -85,9 +101,12 @@ public class SelectionController : MonoBehaviour
         selectedRow = row;
         selectedCol = col;
 
-        Renderer rend = piece.GetComponent<Renderer>();
-        originalMaterial = rend.material;
-        rend.material = highlightMaterial;
+        selectedRenderer = piece.GetComponentInChildren<Renderer>();
+        if (selectedRenderer != null)
+        {
+            originalMaterial = selectedRenderer.material;
+            selectedRenderer.material = highlightMaterial;
+        }
 
         if (highlighter != null)
         {
@@ -107,24 +126,21 @@ public class SelectionController : MonoBehaviour
 
         var captured = spawner.State.ApplyMove(selectedRow, selectedCol, toRow, toCol);
 
-        // Seçili tasi sakla (Deselect referansi sifirlamadan once)
         Transform movingPiece = selectedPiece;
 
-        // Once secimi gorsel olarak birak (materyali eski haline dondur)
-        movingPiece.GetComponent<Renderer>().material = originalMaterial;
+        // Secim materyalini geri yukle
+        if (selectedRenderer != null && originalMaterial != null)
+            selectedRenderer.material = originalMaterial;
 
-        // Hedef dunya pozisyonu (taso yuksekligini koru)
         Vector3 target = tile.position;
         target.y = movingPiece.position.y;
 
-        // Gostergeleri temizle, son hamleyi vurgula
         if (highlighter != null)
         {
             highlighter.ClearMoveOptions();
             highlighter.HighlightMove(fromRow, fromCol, toRow, toCol);
         }
 
-        // Animasyonlu kaydir; bitince yenen taslari kaldir ve sonu kontrol et
         if (animator != null)
         {
             animator.MovePiece(movingPiece, target, () =>
@@ -138,14 +154,13 @@ public class SelectionController : MonoBehaviour
             FinishMove(captured);
         }
 
-        // Secim degiskenlerini sifirla (materyal zaten geri yuklendi)
         selectedPiece = null;
+        selectedRenderer = null;
         originalMaterial = null;
         selectedRow = -1;
         selectedCol = -1;
     }
 
-    // Animasyon bitince calisir
     void FinishMove(System.Collections.Generic.List<(int row, int col)> captured)
     {
         foreach (var (r, c) in captured)
@@ -172,8 +187,11 @@ public class SelectionController : MonoBehaviour
     {
         if (selectedPiece == null) return;
 
-        selectedPiece.GetComponent<Renderer>().material = originalMaterial;
+        if (selectedRenderer != null && originalMaterial != null)
+            selectedRenderer.material = originalMaterial;
+
         selectedPiece = null;
+        selectedRenderer = null;
         originalMaterial = null;
         selectedRow = -1;
         selectedCol = -1;

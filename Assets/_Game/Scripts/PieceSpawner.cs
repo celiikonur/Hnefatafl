@@ -13,7 +13,6 @@ public class PieceSpawner : MonoBehaviour
 
     public GameState State { get; private set; }
 
-    // Copenhagen 11x11
     static readonly string[] Layout11 = new string[]
     {
         "...AAAAA...",
@@ -29,7 +28,6 @@ public class PieceSpawner : MonoBehaviour
         "...AAAAA..."
     };
 
-    // Tablut 9x9
     static readonly string[] Layout9 = new string[]
     {
         "...AAA...",
@@ -45,7 +43,6 @@ public class PieceSpawner : MonoBehaviour
 
     void Start()
     {
-        // Menuden gelen boyutu uygula
         boardSize = GameSettings.BoardSize;
 
         string[] layout = (boardSize == 9) ? Layout9 : Layout11;
@@ -70,19 +67,21 @@ public class PieceSpawner : MonoBehaviour
                 GameObject prefab = (cell == 'K') ? kingPrefab : piecePrefab;
                 GameObject piece = Instantiate(prefab, position, Quaternion.identity, transform);
 
-                Renderer rend = piece.GetComponent<Renderer>();
+                // Renderer ana objede de olabilir, child'da da (model prefablari genelde child'da tutar)
+                Renderer rend = piece.GetComponentInChildren<Renderer>();
+
                 switch (cell)
                 {
                     case 'A':
-                        rend.material = attackerMaterial;
+                        if (rend != null) rend.material = attackerMaterial;
                         piece.name = $"Attacker_{row}_{col}";
                         break;
                     case 'D':
-                        rend.material = defenderMaterial;
+                        if (rend != null) rend.material = defenderMaterial;
                         piece.name = $"Defender_{row}_{col}";
                         break;
                     case 'K':
-                        rend.material = kingMaterial;
+                        if (rend != null) rend.material = kingMaterial;
                         piece.name = "King";
                         break;
                 }
