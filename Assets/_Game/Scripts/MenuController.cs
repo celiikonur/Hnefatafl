@@ -68,15 +68,14 @@ public class MenuController : MonoBehaviour
 
     // Mod toggle: ON = Tablut (9), OFF = Copenhagen (11)
     public void OnModeToggle(bool isOn)
-    {
-        GameSettings.BoardSize = isOn ? 9 : 11;
-    }
+{
+    GameSettings.BoardSize = isOn ? 11 : 9;
+}
 
-    // Taraf toggle: ON = Savunmaci, OFF = Saldirgan
-    public void OnSideToggle(bool isOn)
-    {
-        GameSettings.PlayerIsAttacker = !isOn;
-    }
+public void OnSideToggle(bool isOn)
+{
+    GameSettings.PlayerIsAttacker = isOn;
+}
 
     // Zorluk butonlari -> oyunu baslatir
     public void PlayEasy()
