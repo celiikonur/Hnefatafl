@@ -2258,27 +2258,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3830427168469322739, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
       propertyPath: m_LocalScale.x
-      value: 15
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 3830427168469322739, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
       propertyPath: m_LocalScale.y
-      value: 15
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 3830427168469322739, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
       propertyPath: m_LocalScale.z
-      value: 15
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 3830427168469322739, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3830427168469322739, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
-      propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3830427168469322739, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -15
+      objectReference: {fileID: 0}
+    - target: {fileID: 3830427168469322739, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 8.8
+      value: 9.3
       objectReference: {fileID: 0}
     - target: {fileID: 3830427168469322739, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2735,6 +2735,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e348e7143b6247b488737e4be26fb038, type: 3}
+--- !u!95 &1741797380 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 7190073649039364489, guid: cfa548ce749aab043a5804b70f71c706, type: 3}
+  m_PrefabInstance: {fileID: 1145027909}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1779205043 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5239272197777735519, guid: e348e7143b6247b488737e4be26fb038, type: 3}
@@ -2848,6 +2853,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 5f09fd5d47c0b4f389c1e9a4403a181d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -6664839552874652836, guid: 5f09fd5d47c0b4f389c1e9a4403a181d, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 5f09fd5d47c0b4f389c1e9a4403a181d, type: 3}
@@ -2966,11 +2975,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameUI
   spawner: {fileID: 1819217831}
   gameOverPanel: {fileID: 271153281}
+  vikingAnimator: {fileID: 1741797380}
   victoryImage: {fileID: 1521846934}
   defeatedImage: {fileID: 1413898477}
   drawImage: {fileID: 846727357}
   menuSceneName: MainMenu
-  showDelay: 2
+  showDelay: 3
 --- !u!114 &1942108599
 MonoBehaviour:
   m_ObjectHideFlags: 0

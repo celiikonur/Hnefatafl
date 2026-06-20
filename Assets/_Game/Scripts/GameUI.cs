@@ -1,13 +1,19 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Oyun sonu ekrani. Oyun bitince paneli acar ve oyuncunun sonucuna gore
-// uc gorselden dogru olani gosterir: Victory / Defeated / Draw.
+// Oyun sonu ekrani. Oyun bitince:
+//  1) Viking'in tepki animasyonunu tetikler:
+//       - Rakip (Viking) kazandiysa  -> Win  (sevinme)
+//       - Rakip (Viking) kaybettiyse -> Lost (uzulme)
+//  2) Gecikme sonrasi sonuc panelini acar (Victory/Defeated/Draw)
 public class GameUI : MonoBehaviour
 {
     [Header("Referanslar")]
     public PieceSpawner spawner;
     public GameObject gameOverPanel;
+
+    [Header("Viking Animasyon")]
+    public Animator vikingAnimator;
 
     [Header("Sonuc Gorselleri (panelde, baslangicta kapali)")]
     public GameObject victoryImage;   // oyuncu kazandi
@@ -18,8 +24,7 @@ public class GameUI : MonoBehaviour
     public string menuSceneName = "MainMenu";
 
     [Header("Gecikme")]
-    [Tooltip("Son hamle gorulduken kac saniye sonra panel acilsin")]
-    public float showDelay = 2f;
+    public float showDelay = 2.5f;
 
     bool triggered;
     bool shown;
@@ -36,17 +41,13 @@ public class GameUI : MonoBehaviour
         if (shown) return;
         if (spawner == null || spawner.State == null) return;
 
-        // 1) Oyun bitti mi? (henuz panel acma, sadece sayaci baslat)
         if (!triggered && spawner.State.GameOver)
         {
             triggered = true;
             timer = 0f;
-
-            // TESHIS: gercek degerleri yazdir
-            Debug.Log($"[GAMEOVER] IsDraw={spawner.State.IsDraw} | AttackerWon={spawner.State.AttackerWon} | PlayerIsAttacker={GameSettings.PlayerIsAttacker}");
+            TriggerVikingReaction();
         }
 
-        // 2) Tetiklendiyse, gecikme dolunca paneli ac
         if (triggered && !shown)
         {
             timer += Time.deltaTime;
@@ -56,6 +57,20 @@ public class GameUI : MonoBehaviour
                 ShowResult();
             }
         }
+    }
+
+    // Viking = rakip. Sonuca gore sevinir ya da uzulur.
+    void TriggerVikingReaction()
+    {
+        if (vikingAnimator == null) return;
+        if (spawner.State.IsDraw) return; // berabere: tepki yok
+
+        bool playerWon = (spawner.State.AttackerWon == GameSettings.PlayerIsAttacker);
+
+        if (!playerWon)
+            vikingAnimator.SetTrigger("Win");   // rakip kazandi -> sevinir
+        else
+            vikingAnimator.SetTrigger("Lose");  // rakip kaybetti -> uzulur
     }
 
     void ShowResult()
